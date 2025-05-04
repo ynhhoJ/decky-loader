@@ -217,3 +217,39 @@ class Loader:
         plugin = self.plugins[plugin_name]
 
         await self.reload_queue.put((plugin.file, plugin.plugin_directory))
+
+    async def load_plugin(self, plugin_name: str):
+        plugin = self.plugins[plugin_name]
+        plugin_folder = self.find_plugin_folder(plugin_name)
+        assert plugin_folder is not None
+        plugin_dir = path.join(self.plugin_path, plugin_folder)
+        await self.import_plugin(path.join(plugin_dir, "main.py"), plugin_folder)
+
+    async def unload_plugin(self, plugin_name: str):
+        if plugin_name in self.plugins:
+            await self.plugins[plugin_name].stop()
+            del self.plugins[plugin_name]
+
+    async def reload_plugin(self, plugin_name: str):
+        await self.unload_plugin(plugin_name)
+        await self.load_plugin(plugin_name)
+
+    async def enable_plugin(self, plugin_name: str):
+        plugin = self.plugins[plugin_name]
+        await plugin.execute_method("enable")
+
+    async def disable_plugin(self, plugin_name: str):
+        plugin = self.plugins[plugin_name]
+        await plugin.execute_method("disable")
+
+    async def start_plugin(self, plugin_name: str):
+        plugin = self.plugins[plugin_name]
+        await plugin.execute_method("start")
+
+    async def stop_plugin(self, plugin_name: str):
+        plugin = self.plugins[plugin_name]
+        await plugin.execute_method("stop")
+
+    async def restart_plugin(self, plugin_name: str):
+        await self.stop_plugin(plugin_name)
+        await self.start_plugin(plugin_name)
